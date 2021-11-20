@@ -11,7 +11,7 @@ app.get("/", (req, res, next) => {
     res.json(["Tony", "Lisa", "Michael", "Ginger", "Food"]);
 });
 
-app.get("/api/blogs", (req, res, next) => {
+app.get("/blogs", (req, res, next) => {
     const blogCard = {
         "id": 1,
         "image": "",
