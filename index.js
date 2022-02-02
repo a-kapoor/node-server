@@ -1,15 +1,29 @@
 const express = require("express");
-const cors = require("cors");
 const app = express();
-require("dotenv").config();
-const MongoClient = require('mongodb').MongoClient;
 
+// Logging
 const logger = require('./util/logger').MiddlewareLogger;
 app.use(logger);
 const log = logger.logger;
 
-const uri = `${process.env.MONGODB_CONNECTION_URI}`;
-log.info('connection uri: ' + uri)
+// CORS
+const cors = require("cors");
+
+// Read environment variables
+require("dotenv").config();
+
+// Argument parser
+const argv = require('minimist')(process.argv.slice(2));
+const isLocalhost = !!argv && (argv.localhost == 'true');
+log.info('Running in localhost mode: ' + isLocalhost);
+
+// Mongodb initialization
+const MongoClient = require('mongodb').MongoClient;
+const uri = isLocalhost ? `${process.env.MONGODB_LOCAL_CONNECTION_URI}` :
+    `${process.env.MONGODB_DOCKER_CONNECTION_URI}`;
+log.info('Mongo connection uri: ' + uri)
+
+app.use(express.static('public'));
 
 async function connectToDb() {
     const mongoclient = new MongoClient(uri, {
@@ -56,24 +70,14 @@ app.get("/", (req, res, next) => {
 });
 
 app.get("/blogs", (req, res, next) => {
-    const blogCard = {
-        "id": 1,
-        "image": "",
-        "title": "This is my first blog",
-        "subtitle": "Finally the website is up",
-        "description": "I'm so excited to have my first blog website up. Click the blog to read more info on how I developed it.",
-        "tags": ["React", "Beginner"]
-    }
-    const data = [];
-    for (let i = 0; i < 5; i++) {
-        blogCard["id"] = i;
-        data.push(JSON.parse(JSON.stringify(blogCard)));
-    }
+    const card = require('./blogs/blog-1').blog;
+    const data = [card];
     res.json(data);
 });
 
 // set port, listen for requests
-const PORT = process.env.NODE_DOCKER_PORT || 9000;
+const PORT = isLocalhost ? process.env.NODE_LOCAL_PORT :
+    process.env.NODE_DOCKER_PORT;
 app.listen(PORT, () => {
     log.info(`Server running on port ${process.env.NODE_DOCKER_PORT}`);
 });
